@@ -1,0 +1,8 @@
+#keil files
+*.uvprojx
+*.uvoptx
+
+#keil folders
+/RTE/
+/Objects/
+/Listings/
