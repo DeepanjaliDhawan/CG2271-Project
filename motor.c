@@ -78,7 +78,7 @@ void PORTD_IRQHandler()
 	
 	// Updating some variable / flag
 	counter++;
-	if(counter > 0x0D) {
+	if(counter >= 4) {
 			counter = 0;
 	}		
 	delay(0x80000); // debouncing
@@ -109,6 +109,42 @@ void InitSwitch(void)
 	NVIC_EnableIRQ(PORTD_IRQn);
 }
 
+void run_motor() {
+	// For reference:
+	// Front right: PTB3, TPM2_CH1
+	// Front left: PTB2, TPM2_CH0
+	// Back right: PTB1, TPM1_CH1
+	// Back left: PTB, TPM1_CH0
+
+	switch(counter){
+	// Stationary
+	case 0:
+		TPM1_C1V = 0x0;
+		TPM1_C0V = 0x0;
+		TPM2_C1V = TPM2_C0V = TPM1_C1V = TPM1_C0V = 0x0;
+		break;
+	// Move forward in straight line
+	case 1:
+		TPM2_C1V = TPM2_C0V = TPM1_C1V = TPM1_C0V = 0x753;
+		break;
+	// Turn left
+	case 2:
+		TPM2_C1V = TPM1_C1V = 0x1D4C;
+		TPM2_C0V = TPM1_C0V = 0x753;
+		break;
+	// Turn right
+	case 3:
+		TPM2_C1V = TPM1_C1V = 0x753;
+		TPM2_C0V = TPM1_C0V = 0x1D4C;
+		break;
+	// Reverse in straight line
+	case 4:
+		break;
+	default:
+		break;
+	}
+}
+
 /* MAIN function*/
 int main(void)
 {
@@ -123,6 +159,8 @@ int main(void)
 	
 	while(1)
 	{
+		// Run the motors
+		run_motor();
 		// TODO setup PWM for motors
 		// TODO MOD, CnV for motors
 		
