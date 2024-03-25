@@ -112,17 +112,20 @@ void InitSwitch(void)
 void run_motor() {
 
 	switch(counter){
-	// Move forward in straight line
+	// Stationary
 	case 0:
 		break;
-	// Turn left
+	// Move forward in straight line
 	case 1:
 		break;
-	// Turn right
+	// Turn left
 	case 2:
 		break;
-	// Reverse in straight line
+	// Turn right
 	case 3:
+		break;
+	// Reverse in straight line
+	case 4:
 		break;
 	default:
 		break;
