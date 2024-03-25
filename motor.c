@@ -109,6 +109,26 @@ void InitSwitch(void)
 	NVIC_EnableIRQ(PORTD_IRQn);
 }
 
+void run_motor() {
+
+	switch(counter){
+	// Move forward in straight line
+	case 0:
+		break;
+	// Turn left
+	case 1:
+		break;
+	// Turn right
+	case 2:
+		break;
+	// Reverse in straight line
+	case 3:
+		break;
+	default:
+		break;
+	}
+}
+
 /* MAIN function*/
 int main(void)
 {
@@ -123,6 +143,8 @@ int main(void)
 	
 	while(1)
 	{
+		// Run the motors
+		run_motor();
 		// TODO setup PWM for motors
 		// TODO MOD, CnV for motors
 		
