@@ -138,27 +138,24 @@ void run_motor() {
 	// Back left: PTB, TPM1_CH0
 
 	switch(counter){
-	// Stationary
-	case 0:
+	case 0: // Stationary
 		TPM2_C1V = TPM2_C0V = TPM1_C1V = TPM1_C0V = 0x0;
 		break;
-	// Move forward in straight line
-	case 1:
-		TPM2_C1V = TPM2_C0V = TPM1_C1V = TPM1_C0V = 0x753;
+	case 1: // Move forward in straight line
+		TPM2_C1V = TPM2_C0V = TPM1_C1V = TPM1_C0V = 0x753;	// reduce speed
 		break;
-	// Turn left
-	case 2:
-		TPM2_C1V = TPM1_C1V = 0x1D4C;
+	case 2: // Turn left
+		TPM2_C1V = TPM1_C1V = 0x1D4C; // reduce speed
 		TPM2_C0V = TPM1_C0V = 0x753;
 		break;
-	// Turn right
-	case 3:
-		TPM2_C1V = TPM1_C1V = 0x753;
+	
+	case 3: // Turn right
+		TPM2_C1V = TPM1_C1V = 0x753;	// reduce speed
 		TPM2_C0V = TPM1_C0V = 0x1D4C;
 		break;
-	// Reverse in straight line
-	case 4:
-		break;
+	
+	case 4: // Reverse in straight line
+		break; // use H bridge or what ?
 	default:
 		break;
 	}
@@ -173,6 +170,7 @@ int main(void)
 	
 	while(1)
 	{
+		
 		// Run the motors
 		run_motor();
 		// TODO setup PWM for motors
