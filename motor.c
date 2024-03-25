@@ -78,7 +78,7 @@ void PORTD_IRQHandler()
 	
 	// Updating some variable / flag
 	counter++;
-	if(counter >= 4) {
+	if(counter > 4) {
 			counter = 0;
 	}		
 	delay(0x80000); // debouncing
