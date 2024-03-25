@@ -119,8 +119,6 @@ void run_motor() {
 	switch(counter){
 	// Stationary
 	case 0:
-		TPM1_C1V = 0x0;
-		TPM1_C0V = 0x0;
 		TPM2_C1V = TPM2_C0V = TPM1_C1V = TPM1_C0V = 0x0;
 		break;
 	// Move forward in straight line
