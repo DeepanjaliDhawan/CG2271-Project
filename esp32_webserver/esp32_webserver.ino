@@ -152,7 +152,7 @@ void loop() {
     response = "Right";
     Serial2.write(0x04);
   }
-  if(req.indexOf("boost") != -1) {
+  if(req.indexOf("Boost") != -1) {
     response = "Boost";
     Serial2.write(0x05);
   }
