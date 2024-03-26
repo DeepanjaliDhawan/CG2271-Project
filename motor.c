@@ -10,8 +10,9 @@
 #define MOTOR_FRONT_RIGHT 	3	// PTB3 TPM2_CH1
 
 #define MOD_VAL 7500
-#define FULL_MOD 0x1D4C
-#define HALF_MOD 0x753
+#define FULL_MOD 0x1D4C			// 7500
+#define QUARTER_MOD 0x753		// 1875
+#define TEST_MOD 0x3A9			// 937
 
 #define CLOCK (48000000 / 128) // 375000 (AUDIO PWM)
 #define note_C (uint16_t)(CLOCK / 262)
@@ -148,40 +149,40 @@ void run_motor() {
 	case 1: // Move forward in straight line
 		// Configure left wheels
 		TPM2_C0V = 0;
-		TPM2_C1V = HALF_MOD;
+		TPM2_C1V = TEST_MOD;
 
 		// Configure right wheels
 		TPM1_C0V = 0;
-		TPM1_C0V = HALF_MOD;	// reduce speed
+		TPM1_C1V = TEST_MOD;	// reduce speed
 		break;
 
 	case 2: // Turn left
 		// Configure left wheels
 		TPM2_C0V = 0;
-		TPM2_C1V = HALF_MOD;
+		TPM2_C1V = TEST_MOD;
 
 		// Configure right wheels
 		TPM1_C0V = 0;
-		TPM1_C1V = FULL_MOD;
+		TPM1_C1V = QUARTER_MOD;
 		break;
 	
 	case 3: // Turn right
 		// Configure left wheels
 		TPM2_C0V = 0;
-		TPM2_C1V = FULL_MOD;
+		TPM2_C1V = QUARTER_MOD;
 		
 		// Configure right wheels
 		TPM1_C0V = 0;
-		TPM1_C1V = HALF_MOD;
+		TPM1_C1V = TEST_MOD;
 		break;
 	
 	case 4: // Reverse in straight line
 		// Configure left wheels
 		TPM2_C1V = 0;
-		TPM2_C0V = HALF_MOD;
+		TPM2_C0V = TEST_MOD;
 		// Configure right wheels
 		TPM1_C1V = 0;
-		TPM1_C0V = HALF_MOD;
+		TPM1_C0V = TEST_MOD;
 		break; // use H bridge or what ?
 	default:
 		break;
