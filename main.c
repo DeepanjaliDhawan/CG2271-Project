@@ -264,9 +264,6 @@ int main(void)
 
 	// DUTY CYCLE: change VOLUME + can generate different PWM simulataneously (557)
 	// completely HARDWARE driven
-	// TPM1_C0V = 0xEA6; // 0xEA6 = 3750 (half of 7500) -> 50% duty cycle 
-	
-	//TPM1_C1V = 0x753; // half of 3750
 	
 	osThreadNew(brain_thread, NULL, &priorityHigh);	// brain thread should have the highest priority to control the others
 	osThreadNew(motor_thread, NULL, NULL);
