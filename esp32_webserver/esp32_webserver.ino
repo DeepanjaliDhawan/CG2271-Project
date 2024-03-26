@@ -152,16 +152,30 @@ void loop() {
     response = "Right";
     Serial2.write(0x04);
   }
-  if(req.indexOf("Boost") != -1) {
-    response = "Boost";
+  if(req.indexOf("FrontLeft") != -1) {
+    response = "FrontLeft";
     Serial2.write(0x05);
   }
+  if(req.indexOf("FrontRight") != -1) {
+    response = "FrontRight";
+    Serial2.write(0x06);
+  }
+  if(req.indexOf("ReverseLeft") != -1) {
+    response = "ReverseLeft";
+    Serial2.write(0x07);
+  }
+  if(req.indexOf("ReverseRight") != -1) {
+    response = "ReverseRight";
+    Serial2.write(0x08);
+  }
+  
   if(req.indexOf("Song") != -1) {
     response = "Song";
     Serial2.write(0x10);
   }
   if(req.indexOf("testled") != -1) {
     response = "red led test";
+    digitalWrite(output26, HIGH);
     Serial2.write(0x20);
   }
 
