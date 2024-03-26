@@ -160,6 +160,10 @@ void loop() {
     response = "Song";
     Serial2.write(0x10);
   }
+  if(req.indexOf("testled") != -1) {
+    response = "red led test";
+    Serial2.write(0x20);
+  }
 
   client.println("HTTP/1.1 200 OK");
   client.println("Content-Type: text/html");
