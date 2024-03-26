@@ -136,6 +136,7 @@ void InitSwitch(void)
 	NVIC_EnableIRQ(PORTD_IRQn);
 }
 
+
 void run_motor() {
 	// For reference:
 	// Left wheels, AIN1: PTB3, TPM2_CH1
@@ -208,6 +209,7 @@ void run_motor() {
 }
 
 /* MAIN function*/
+/*
 int main(void)
 {
 	SystemCoreClockUpdate();
@@ -222,7 +224,7 @@ int main(void)
 		// TODO setup PWM for motors
 		// TODO MOD, CnV for motors
 		
-		/**
+		
 		// AUDIO
 		uint16_t MOD_VALUE[] = {note_C, note_D, note_E, note_F, note_G, note_A, note_B};
 		for (int i = 0; i < 7; i++){
@@ -230,8 +232,8 @@ int main(void)
 			TPM1->MOD = MOD_VALUE[i];
 			delay(0xFF000);
 		}
-		**/
+		
 	}
 }
-
+*/
 
