@@ -1,8 +1,9 @@
+/**
 #include "MKL25Z4.h"        // Device header
 #include "system_MKL25Z4.h" 
-#define MASK(x)     (1 << (x))
+#define MASK(x)     (1 << (x)) 
 
-#define SW_POS		6		// PORTD Pin 6 (INT)
+#define SW_POS		6		// PORTD Pin 6: for temporary push btn Interrupt
 
 #define MOTOR_BACK_LEFT		0	// PTB0 TPM1_CH0
 #define MOTOR_BACK_RIGHT 	1	// PTB1 TPM1_CH1
@@ -11,9 +12,9 @@
 
 #define DIRECTIONS 6
 #define MOD_VAL 7500
-#define FULL_MOD 0x1D4C			// 7500
-#define QUARTER_MOD 0x753		// 1875
-#define TEST_MOD 0x3A9			// 937
+#define FULL_MOD (MOD_VAL)			// 7500	// for actual run
+#define QUARTER_MOD (MOD_VAL / 4)		// 1875 // for test runs
+#define TEST_MOD (MOD_VAL / 8)			// 937	// for test runs
 
 #define CLOCK (48000000 / 128) // 375000 (AUDIO PWM)
 #define note_C (uint16_t)(CLOCK / 262)
@@ -29,7 +30,8 @@
 #define UART_RX_PORTE23 23
 #define UART2_INT_PRIO 128
 
-/* Delay Function */
+/**
+// Delay Function
 static void delay(volatile uint32_t nof) {
   while(nof!=0) {
     __asm("NOP");
@@ -37,7 +39,7 @@ static void delay(volatile uint32_t nof) {
   }
 }
 
-/* Init 50 Hz rising edge PWM for PORTB TPM0,1 CH0,1 */
+// Init 50 Hz rising edge PWM for PORTB TPM0,1 CH0,1
 void InitPWM(void){
 	// Enable Clock Gating for PORTB
 	SIM_SCGC5 |= SIM_SCGC5_PORTB_MASK;
@@ -94,10 +96,11 @@ void InitPWM(void){
 	TPM2->MOD = MOD_VAL;
 }
 
+
 // to select LED for INT code
 volatile unsigned int counter = 0;
 
-/* INT code for PORTD */
+// INT code for PORTD
 void PORTD_IRQHandler()
 {
 	// Clear Pending IRQ
@@ -114,14 +117,15 @@ void PORTD_IRQHandler()
 	PORTD->ISFR |= MASK(SW_POS);
 }
 
-/* Init input, enable interrupt for switch at PORTD */
+// Temp: Init input, enable interrupt for switch at PORTD
+
 void InitSwitch(void)
 {
 	// enable clock for PortD
 	SIM->SCGC5 |= SIM_SCGC5_PORTD_MASK;
 	
-	/* Select GPIO and enable pull-up resistors and interrupts on 
-	falling edges of pin connected to switch*/
+	// Select GPIO and enable pull-up resistors and interrupts on 
+	falling edges of pin connected to switch
 	PORTD->PCR[SW_POS] |= (PORT_PCR_MUX(1)	| //set GPIO
 						PORT_PCR_PS_MASK	| 
 						PORT_PCR_PE_MASK	|
@@ -135,7 +139,6 @@ void InitSwitch(void)
 	NVIC_ClearPendingIRQ(PORTD_IRQn);
 	NVIC_EnableIRQ(PORTD_IRQn);
 }
-
 
 void run_motor() {
 	// For reference:
@@ -208,8 +211,8 @@ void run_motor() {
 	}
 }
 
-/* MAIN function*/
-/*
+// MAIN function
+
 int main(void)
 {
 	SystemCoreClockUpdate();
@@ -221,9 +224,6 @@ int main(void)
 		
 		// Run the motors
 		run_motor();
-		// TODO setup PWM for motors
-		// TODO MOD, CnV for motors
-		
 		
 		// AUDIO
 		uint16_t MOD_VALUE[] = {note_C, note_D, note_E, note_F, note_G, note_A, note_B};
@@ -235,5 +235,5 @@ int main(void)
 		
 	}
 }
-*/
+**/
 
