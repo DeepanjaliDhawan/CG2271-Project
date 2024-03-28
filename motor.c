@@ -9,6 +9,7 @@
 #define MOTOR_FRONT_LEFT	2	// PTB2 TPM2_CH0
 #define MOTOR_FRONT_RIGHT 	3	// PTB3 TPM2_CH1
 
+#define DIRECTIONS 6
 #define MOD_VAL 7500
 #define FULL_MOD 0x1D4C			// 7500
 #define QUARTER_MOD 0x753		// 1875
@@ -104,7 +105,7 @@ void PORTD_IRQHandler()
 	
 	// Updating some variable / flag
 	counter++;
-	if(counter > 4) {
+	if(counter > DIRECTIONS) {
 			counter = 0;
 	}		
 	delay(0x80000); // debouncing
@@ -154,7 +155,7 @@ void run_motor() {
 
 		// Configure right wheels
 		TPM1_C0V = 0;
-		TPM1_C1V = TEST_MOD;	// reduce speed
+		TPM1_C1V = TEST_MOD;	
 		break;
 
 	case 2: // Turn left
@@ -185,6 +186,23 @@ void run_motor() {
 		TPM1_C1V = 0;
 		TPM1_C0V = TEST_MOD;
 		break; // use H bridge or what ?
+	case 5: // pivot L
+		// left wheels reverse
+		TPM2_C1V = 0;
+		TPM2_C0V = TEST_MOD;
+		// right wheels forward
+		TPM1_C0V = 0;
+		TPM1_C1V = TEST_MOD;
+	
+
+		break;
+	case 6: // pivot R
+		// left wheels forward
+		TPM2_C0V = 0;
+		TPM2_C1V = TEST_MOD;
+		// right wheels reverse
+		TPM1_C1V = 0;
+		TPM1_C0V = TEST_MOD;
 	default:
 		break;
 	}
