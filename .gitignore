@@ -1,6 +1,8 @@
 #keil files
 *.uvprojx
 *.uvoptx
+EventRecorderStub.scvd
+*.uvguix.test
 
 #keil folders
 /RTE/
