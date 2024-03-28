@@ -4,6 +4,7 @@
 #include CMSIS_device_header
 #include "cmsis_os2.h"
 //#include "UART.c"
+//#include "motor.c"
 
 #define FUNCTIONBITSMASK(x)	(0xF0 & x)	// Obtains only the function bits, which are the 4 MSB, leaving 4 LSB as 0
 
@@ -16,7 +17,41 @@
 #define UART_TX_PORTE22 22 // UART2 (162)
 #define UART_RX_PORTE23 23
 #define UART2_INT_PRIO 128
+// motors
+#define MOTOR_BACK_LEFT		0	// PTB0 TPM1_CH0
+#define MOTOR_BACK_RIGHT 	1	// PTB1 TPM1_CH1
+#define MOTOR_FRONT_LEFT	2	// PTB2 TPM2_CH0
+#define MOTOR_FRONT_RIGHT 	3	// PTB3 TPM2_CH1
 
+#define DIRECTIONS 6
+#define MOD_VAL 7500
+#define FULL_MOD (MOD_VAL)			// 7500	// for actual run
+#define QUARTER_MOD (MOD_VAL / 4)		// 1875 // for test runs
+#define TEST_MOD (MOD_VAL / 8)			// 937	// for test runs// temp
+
+#define SW_POS		6		// PORTD Pin 6: for temporary push btn Interrupt
+
+// audio 
+#define CLOCK (48000000 / 128) // 375000 (AUDIO PWM)
+#define note_C (uint16_t)(CLOCK / 262)
+#define note_D (uint16_t)(CLOCK / 294)
+#define note_E (uint16_t)(CLOCK / 330)
+#define note_F (uint16_t)(CLOCK / 349)
+#define note_G (uint16_t)(CLOCK / 392)
+#define note_A (uint16_t)(CLOCK / 440)
+#define note_B (uint16_t)(CLOCK / 494)
+
+// ESP commands
+#define STOP 			0x00
+#define FORWARD 		0x01
+#define BACKWARD 		0x02
+#define LEFT	 		0x03
+#define RIGHT	 		0x04
+#define FRONT_LEFT 		0x05
+#define FRONT_RIGHT 	0x06
+#define REVERSE_LEFT	0x07
+#define REVERSE_RIGHT	0x08
+#define SONG 			0x10
 
 osSemaphoreId_t brainSem;
 osSemaphoreId_t motorSem;
@@ -125,6 +160,133 @@ void ledControl(led_colors_t led_color, led_toggle_t led_toggle)
 	}
 }
 
+/* Init 50 Hz rising edge PWM for PORTB TPM0,1 CH0,1 */
+void InitPWM(void){
+	// Enable Clock Gating for PORTB
+	SIM_SCGC5 |= SIM_SCGC5_PORTB_MASK;
+	
+	// Configure MODE 3 for PWM TPM (163)
+	PORTB->PCR[MOTOR_BACK_LEFT] &= ~PORT_PCR_MUX_MASK;
+	PORTB->PCR[MOTOR_BACK_LEFT] |= PORT_PCR_MUX(3); 
+	
+	PORTB->PCR[MOTOR_BACK_RIGHT] &= ~PORT_PCR_MUX_MASK;
+	PORTB->PCR[MOTOR_BACK_RIGHT] |= PORT_PCR_MUX(3);
+	
+	PORTB->PCR[MOTOR_FRONT_LEFT] &= ~PORT_PCR_MUX_MASK;
+	PORTB->PCR[MOTOR_FRONT_LEFT] |= PORT_PCR_MUX(3);
+	
+	PORTB->PCR[MOTOR_FRONT_RIGHT] &= ~PORT_PCR_MUX_MASK;
+	PORTB->PCR[MOTOR_FRONT_RIGHT] |= PORT_PCR_MUX(3);
+	
+	// Enable Clock gating for TPM1,2 (207)
+	SIM->SCGC6 |= SIM_SCGC6_TPM1_MASK;
+	SIM->SCGC6 |= SIM_SCGC6_TPM2_MASK;
+	
+	// Select Clock for TPM module
+	SIM->SOPT2 &= ~SIM_SOPT2_TPMSRC_MASK;
+	SIM->SOPT2 |= SIM_SOPT2_TPMSRC(1); // internal clk
+	
+	// init PWM for TIMER 1
+	// up-counting, prescaler = 128 (553)
+	TPM1->SC &= ~((TPM_SC_CMOD_MASK) | (TPM_SC_PS_MASK));
+	TPM1->SC |= TPM_SC_CMOD(1) | TPM_SC_PS(7); 
+	TPM1->SC &= ~(TPM_SC_CPWMS_MASK);
+	
+	// TPM1_CH0 ie MOTOR_BACK_LEFT
+	TPM1_C0SC &= ~((TPM_CnSC_ELSB_MASK) |(TPM_CnSC_ELSA_MASK) | (TPM_CnSC_MSB_MASK) | (TPM_CnSC_MSA_MASK));
+	TPM1_C0SC |= (TPM_CnSC_ELSB(1) | TPM_CnSC_MSB(1)); // Edge align PWM, high-true pulses: BABA = 1010 (555)
+	// TPM1_CH1 ie MOTOR_BACK_RIGHT
+	TPM1_C1SC &= ~((TPM_CnSC_ELSB_MASK) |(TPM_CnSC_ELSA_MASK) | (TPM_CnSC_MSB_MASK) | (TPM_CnSC_MSA_MASK));
+	TPM1_C1SC |= (TPM_CnSC_ELSB(1) | TPM_CnSC_MSB(1));	
+	
+	// init PWM for TIMER 2
+	// up-counting, prescaler = 128 (553)
+	TPM2->SC &= ~((TPM_SC_CMOD_MASK) | (TPM_SC_PS_MASK));
+	TPM2->SC |= TPM_SC_CMOD(1) | TPM_SC_PS(7); 
+	TPM2->SC &= ~(TPM_SC_CPWMS_MASK);
+	
+	// TPM2_CH0 ie MOTOR_FRONT_LEFT
+	TPM2_C0SC &= ~((TPM_CnSC_ELSB_MASK) |(TPM_CnSC_ELSA_MASK) | (TPM_CnSC_MSB_MASK) | (TPM_CnSC_MSA_MASK));
+	TPM2_C0SC |= (TPM_CnSC_ELSB(1) | TPM_CnSC_MSB(1));
+	// TPM2_CH1 ie MOTOR_FRONT_RIGHT
+	TPM2_C1SC &= ~((TPM_CnSC_ELSB_MASK) |(TPM_CnSC_ELSA_MASK) | (TPM_CnSC_MSB_MASK) | (TPM_CnSC_MSA_MASK));
+	TPM2_C1SC |= (TPM_CnSC_ELSB(1) | TPM_CnSC_MSB(1));
+	
+	// Set Modulo Value 48_000_000(48MHz) / 128 = 375_000 / 7500 = 50 Hz (Clk / MOD = freq) (554)
+	TPM1->MOD = MOD_VAL;
+	TPM2->MOD = MOD_VAL;
+}
+
+void run_motor() {
+	// For reference:
+	// Left wheels, AIN1: PTB3, TPM2_CH1
+	// Left wheels, AIN2: PTB2, TPM2_CH0
+	// Right wheels, AIN1: PTB1, TPM1_CH1
+	// Right wheels, AIN2: PTB, TPM1_CH0
+
+	switch(rx_data){
+	case STOP: // Stationary
+		TPM2_C1V = TPM2_C0V = TPM1_C1V = TPM1_C0V = 0x0;
+		break;
+	case FORWARD: // Move forward in straight line
+		// Configure left wheels
+		TPM2_C0V = 0;
+		TPM2_C1V = TEST_MOD;
+
+		// Configure right wheels
+		TPM1_C0V = 0;
+		TPM1_C1V = TEST_MOD;	
+		break;
+
+	case FRONT_LEFT: // Turn left
+		// Configure left wheels
+		TPM2_C0V = 0;
+		TPM2_C1V = TEST_MOD;
+
+		// Configure right wheels
+		TPM1_C0V = 0;
+		TPM1_C1V = QUARTER_MOD;
+		break;
+	
+	case FRONT_RIGHT: // Turn right
+		// Configure left wheels
+		TPM2_C0V = 0;
+		TPM2_C1V = QUARTER_MOD;
+		
+		// Configure right wheels
+		TPM1_C0V = 0;
+		TPM1_C1V = TEST_MOD;
+		break;
+	
+	case BACKWARD: // Reverse in straight line
+		// Configure left wheels
+		TPM2_C1V = 0;
+		TPM2_C0V = TEST_MOD;
+		// Configure right wheels
+		TPM1_C1V = 0;
+		TPM1_C0V = TEST_MOD;
+		break; 
+	
+	case LEFT: // pivot L
+		// left wheels reverse
+		TPM2_C1V = 0;
+		TPM2_C0V = TEST_MOD;
+		// right wheels forward
+		TPM1_C0V = 0;
+		TPM1_C1V = TEST_MOD;
+		break;
+	
+	case RIGHT: // pivot R
+		// left wheels forward
+		TPM2_C0V = 0;
+		TPM2_C1V = TEST_MOD;
+		// right wheels reverse
+		TPM1_C1V = 0;
+		TPM1_C0V = TEST_MOD;
+	default:
+		break;
+	}
+}
 
 /* UART code @ 48MHz core clk freq and 24MHz Bus clk freq */
 void initUART2(uint32_t baud_rate) {
@@ -205,8 +367,10 @@ void brain_thread (void *argument) {
 void motor_thread (void *argument) {
 	for (;;) {
 		osSemaphoreAcquire(motorSem, osWaitForever);
+		// TODO: remove push btn interrupt
 		
 		// include motor move code/function
+		run_motor();
 	}
 }
 
@@ -252,7 +416,7 @@ int main(void)
 	//InitSwitch();
 	initGPIO();
 	initUART2(BAUD_RATE);
-	
+	InitPWM();
 	
 	osKernelInitialize();	// Initialize CMSIS-RTOS
 	
