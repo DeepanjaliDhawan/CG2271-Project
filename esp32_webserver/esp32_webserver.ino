@@ -132,44 +132,44 @@ void loop() {
   }
   */
 
-  if(req.indexOf("Stop") != -1) {
+  if(req.indexOf("stop") != -1) {
     response = "Stop";
     Serial2.write(0x00);
   }
-  if(req.indexOf("Forward") != -1) {
+  if(req.indexOf("forward") != -1) {
     response = "Forward";
     Serial2.write(0x01);
   }
-  if(req.indexOf("Backward") != -1) {
+  if(req.indexOf("backward") != -1) {
     response = "Backward";
     Serial2.write(0x02);
   }
-  if(req.indexOf("Left") != -1) {
+  if(req.indexOf("left") != -1) {
     response = "Left";
     Serial2.write(0x03);
   }
-  if(req.indexOf("Right") != -1) {
+  if(req.indexOf("right") != -1) {
     response = "Right";
     Serial2.write(0x04);
   }
-  if(req.indexOf("FrontLeft") != -1) {
+  if(req.indexOf("frontleft") != -1) {
     response = "FrontLeft";
     Serial2.write(0x05);
   }
-  if(req.indexOf("FrontRight") != -1) {
+  if(req.indexOf("frontright") != -1) {
     response = "FrontRight";
     Serial2.write(0x06);
   }
-  if(req.indexOf("ReverseLeft") != -1) {
+  if(req.indexOf("reverseleft") != -1) {
     response = "ReverseLeft";
     Serial2.write(0x07);
   }
-  if(req.indexOf("ReverseRight") != -1) {
+  if(req.indexOf("reverseright") != -1) {
     response = "ReverseRight";
     Serial2.write(0x08);
   }
   
-  if(req.indexOf("Song") != -1) {
+  if(req.indexOf("song") != -1) {
     response = "Song";
     Serial2.write(0x10);
   }

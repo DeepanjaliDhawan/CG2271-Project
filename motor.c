@@ -30,7 +30,7 @@
 #define UART_RX_PORTE23 23
 #define UART2_INT_PRIO 128
 
-/**
+
 // Delay Function
 static void delay(volatile uint32_t nof) {
   while(nof!=0) {

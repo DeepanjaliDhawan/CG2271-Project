@@ -2,6 +2,8 @@
 #include  CMSIS_device_header
 #include "MKL25Z4.h"                    // Device header
 
+
+/*
 // Define LED pins
 //green -> front
 #define GREEN_PTC4 4 // Port C Pin 4
@@ -18,7 +20,7 @@
 
 #define MASK(x)      (1 << (x))
 
-volatile int bot_move = 1;
+//volatile int bot_move = 1;
 
 // Setup GPIO Pins for the following
 void InitGPIO(void) {
@@ -106,3 +108,4 @@ void redLED_stationary(void) {
 	PTC->PCOR = MASK(RED_PTC7); // Turn off the red LED
 	osDelay(250); // LED off for 250ms
 }
+*/
