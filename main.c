@@ -27,6 +27,7 @@
 #define DIRECTIONS 6
 #define MOD_VAL 7500
 #define FULL_MOD (MOD_VAL)			// 7500	// for actual run
+#define HALF_MOD (MOD_VAL / 2)			// 3750	// for adjustment
 #define QUARTER_MOD (MOD_VAL / 4)		// 1875 // for test runs
 #define TEST_MOD (MOD_VAL / 8)			// 937	// for test runs// temp
 
@@ -49,14 +50,23 @@
 
 
 // audio 
-#define CLOCK (48000000 / 128) // 375000 (AUDIO PWM)
-#define note_C (uint16_t)(CLOCK / 262)
-#define note_D (uint16_t)(CLOCK / 294)
-#define note_E (uint16_t)(CLOCK / 330)
-#define note_F (uint16_t)(CLOCK / 349)
-#define note_G (uint16_t)(CLOCK / 392)
-#define note_A (uint16_t)(CLOCK / 440)
-#define note_B (uint16_t)(CLOCK / 494)
+#define PTD0 0 // for PWM (TPM0_CH0)
+
+#define CLOCK (48000000 / 128) // 375000
+#define note_C 		2100
+#define note_D 		2300
+#define note_E 		2500
+#define note_F 		2600
+#define note_G 		2800
+#define note_A 		3000
+#define note_B 		3100
+#define note_C1 	3200
+#define note_D1 	3400
+#define note_E1 	3600
+#define note_F1 	3700
+#define note_G1 	3900
+#define note_A1 	4100
+#define note_B1 	4300
 
 // ESP commands
 #define STOP 			0x00
@@ -341,11 +351,11 @@ void run_motor() {
 	case FORWARD: // Move forward in straight line
 		// Configure left wheels
 		TPM2_C0V = 0;
-		TPM2_C1V = QUARTER_MOD;
+		TPM2_C1V = FULL_MOD;
 
 		// Configure right wheels
 		TPM1_C0V = 0;
-		TPM1_C1V = QUARTER_MOD;	
+		TPM1_C1V = FULL_MOD;	
 	
 		is_moving = true;
 		break;
@@ -353,7 +363,7 @@ void run_motor() {
 	case FRONT_LEFT: // Turn left
 		// Configure left wheels
 		TPM2_C0V = 0;
-		TPM2_C1V = QUARTER_MOD;
+		TPM2_C1V = HALF_MOD;
 
 		// Configure right wheels
 		TPM1_C0V = 0;
@@ -369,7 +379,7 @@ void run_motor() {
 		
 		// Configure right wheels
 		TPM1_C0V = 0;
-		TPM1_C1V = QUARTER_MOD;
+		TPM1_C1V = HALF_MOD;
 	
 		is_moving = true;
 		break;
@@ -377,10 +387,10 @@ void run_motor() {
 	case BACKWARD: // Reverse in straight line
 		// Configure left wheels
 		TPM2_C1V = 0;
-		TPM2_C0V = QUARTER_MOD;
+		TPM2_C0V = HALF_MOD;
 		// Configure right wheels
 		TPM1_C1V = 0;
-		TPM1_C0V = QUARTER_MOD;
+		TPM1_C0V = HALF_MOD;
 	
 		is_moving = true;
 		break; 
@@ -388,10 +398,10 @@ void run_motor() {
 	case LEFT: // pivot L
 		// left wheels reverse
 		TPM2_C1V = 0;
-		TPM2_C0V = QUARTER_MOD;
+		TPM2_C0V = HALF_MOD;
 		// right wheels forward
 		TPM1_C0V = 0;
-		TPM1_C1V = QUARTER_MOD;
+		TPM1_C1V = HALF_MOD;
 	
 		is_moving = true;
 		break;
@@ -399,15 +409,41 @@ void run_motor() {
 	case RIGHT: // pivot R
 		// left wheels forward
 		TPM2_C0V = 0;
-		TPM2_C1V = QUARTER_MOD;
+		TPM2_C1V = HALF_MOD;
 		// right wheels reverse
 		TPM1_C1V = 0;
-		TPM1_C0V = QUARTER_MOD;
+		TPM1_C0V = HALF_MOD;
 	
 		is_moving = true;
 	default:
 		break;
 	}
+}
+
+void InitAudio(void){
+	// Enable Clock Gating for PORTD (on power)
+	SIM_SCGC5 |= SIM_SCGC5_PORTD_MASK;
+	
+	// Configure MODE 3 for PWM TPM (Chpt 10 163) // choose PWM TPM module
+	PORTD->PCR[PTD0] &= ~PORT_PCR_MUX_MASK;
+	PORTD->PCR[PTD0] |= PORT_PCR_MUX(4); // ALT4
+	
+	// Enable Clock gating for TPM1 (Search SCGC6 207)
+	SIM->SCGC6 |= SIM_SCGC6_TPM0_MASK; //0x2
+	
+	// Select Clock for TPM module
+	SIM->SOPT2 &= ~SIM_SOPT2_TPMSRC_MASK;
+	SIM->SOPT2 |= SIM_SOPT2_TPMSRC(1); // internal clk
+		
+	/* Edge-aligned PWM */
+	// Update SnC register : CMOD = 01(up counting), PS = 111 (Prescalar 128) Chapter 31 Timer (553)
+	TPM0->SC &= ~((TPM_SC_CMOD_MASK) | (TPM_SC_PS_MASK));
+	TPM0->SC |= TPM_SC_CMOD(1) | TPM_SC_PS(7);
+	TPM0->SC &= ~(TPM_SC_CPWMS_MASK); // disable center aligned PWM
+	
+	// Enable PWM on TPM0 Channel 0 -> PTB0 Edge Align PWM 1010 (555)
+	TPM0_C0SC &= ~ ((TPM_CnSC_ELSB_MASK) |(TPM_CnSC_ELSA_MASK) | (TPM_CnSC_MSB_MASK) | (TPM_CnSC_MSA_MASK));
+	TPM0_C0SC |= (TPM_CnSC_ELSB(1) | TPM_CnSC_MSB(1)); // BABA = 1010
 }
 
 /* UART code @ 48MHz core clk freq and 24MHz Bus clk freq */
@@ -446,6 +482,60 @@ void initUART2(uint32_t baud_rate) {
 	UART2->C2 |= UART_C2_RIE_MASK;
 	
 	UART2->C2 |= UART_C2_RE_MASK;
+}
+
+// change FREQUENCY by changing MOD
+// change VOLUME by changing CnV (DUTY CYCLE)
+void play_continuous_song() {
+    uint16_t freq[] = { 
+			note_C1, note_B, note_A, note_F,
+			note_G, note_G, note_C1, 
+			note_B,	note_A, 
+			note_A, note_A, note_C1,
+			note_B, note_A, note_G, 
+			note_B1, note_A1, note_B1, note_A1, 
+			note_B1, note_G, note_G, 
+			note_B1, note_A1, note_B1, note_A1, note_B1};
+	uint16_t length[] = { 1, 1, 1, 1,
+						2, 1, 1,
+						2, 2,
+						1, 1, 2,
+						1, 1, 2,
+						1, 1, 1, 1,
+						1, 2, 1,
+						1, 1, 1, 1, 1};
+    int continuousSongLength = sizeof(freq) / sizeof(uint16_t);
+	
+	for (int i = 0; i < continuousSongLength; i++) {
+		TPM0->MOD = CLOCK / freq[i];
+		TPM0_C0V = (CLOCK / freq[i]) / 8; // Set duty cycle to 12.5%
+		//osDelay(0x3F000 * length[i]);
+		osDelay(100 * length[i]);
+		TPM0_C0V = 0x0;
+		//osDelay(0x3F000);
+		osDelay(100);
+    }	
+}
+
+void play_ending_song() {
+    uint16_t freq[] = { 
+			note_C, note_D, note_E, note_F,
+			note_G, note_A, note_B, note_C1,
+			note_B, note_A, note_G, note_F,
+			note_E, note_D, note_C
+	};		
+    int continuousSongLength = sizeof(freq) / sizeof(uint16_t);
+
+	for (int i = 0; i < continuousSongLength; i++) {
+		
+		TPM0->MOD = CLOCK / freq[i];
+		TPM0_C0V = (CLOCK / freq[i]) / 8; // Set duty cycle to 12.5%
+		delay(0x1F000);
+		//osDelay(100);
+		TPM0_C0V = 0x0;
+		delay(0x1F000);
+		//osDelay(100);
+	}
 }
 
 
@@ -541,18 +631,21 @@ void bg_music_thread (void *argument) {
 		osSemaphoreAcquire(bgMusicSem, osWaitForever);
 		
 		// code to play continuous music
+		play_continuous_song();
+		osSemaphoreRelease(bgMusicSem);	// stop playing background music
 	}
 }
 
-
 /* Finish Music Thread */
 void finish_music_thread (void *argument) {
-	for (;;) {
-		osSemaphoreRelease(bgMusicSem);	// stop playing background music
-		osSemaphoreAcquire(finishMusicSem, osWaitForever);
-		
-		// code to play finish music
-	}
+	
+	osSemaphoreAcquire(finishMusicSem, osWaitForever);
+	//osSemaphoreAcquire(bgMusicSem, osWaitForever);
+	
+	// code to play finish music
+	play_ending_song();
+	osSemaphoreAcquire(bgMusicSem, osWaitForever);
+	osSemaphoreRelease(finishMusicSem);	// stop playing background music
 }
 
 
@@ -565,6 +658,7 @@ int main(void)
 	InitGPIO();
 	initUART2(BAUD_RATE);
 	InitPWM();
+	InitAudio();
 	
 	osKernelInitialize();	// Initialize CMSIS-RTOS
 	
@@ -586,22 +680,4 @@ int main(void)
 	
 	//ledControl(global_led, led_on);
 	osKernelStart();
-
-	while(1)
-	{
-		// TODO setup PWM for motors
-		// TODO MOD, CnV for motors
-		
-		//ledControl(global_led, led_on);
-		//delay(0x80000);
-		/**
-		// AUDIO
-		uint16_t MOD_VALUE[] = {note_C, note_D, note_E, note_F, note_G, note_A, note_B};
-		for (int i = 0; i < 7; i++){
-			// change FREQUENCY by changing MOD
-			TPM1->MOD = MOD_VALUE[i];
-			delay(0xFF000);
-		}
-		**/
-	}
 }
