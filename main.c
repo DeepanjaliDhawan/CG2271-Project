@@ -337,7 +337,12 @@ void InitPWM(void){
 	TPM1->MOD = MOD_VAL;
 	TPM2->MOD = MOD_VAL;
 }
-
+// NOT USED YET (replace the // for now)
+void motor_left_reverse_half() { // copy paste for FRONT_LEFT/RIGHT, REVERSE_LEFT/RIGHT if working
+	TPM2_C1V = 0x0;
+	TPM2_C0V = QUARTER_MOD;
+}
+// IN USE (TDLR: TPM2 for left, TPM1 for right)
 void motor_left_forward() {
 	TPM2_C0V = 0x0;
 	TPM2_C1V = FULL_MOD;
@@ -345,6 +350,10 @@ void motor_left_forward() {
 void motor_left_stop() {
 	TPM2_C0V = 0x0;
 	TPM2_C1V = 0x0;
+}
+void motor_left_reverse() {
+	TPM2_C1V = 0x0;
+	TPM2_C0V = HALF_MOD;
 }
 void motor_right_forward() {
 	TPM1_C0V = 0x0;
@@ -354,6 +363,11 @@ void motor_right_stop() {
 	TPM1_C0V = 0x0;
 	TPM1_C1V = 0x0;
 }
+void motor_right_reverse() {
+	// Configure right wheels
+	TPM1_C1V = 0x0;
+	TPM1_C0V = HALF_MOD;
+}
 
 void run_motor() {
 	// For reference:
@@ -361,13 +375,17 @@ void run_motor() {
 	// Left wheels, AIN2: PTB2, TPM2_CH0
 	// Right wheels, AIN1: PTB1, TPM1_CH1
 	// Right wheels, AIN2: PTB0, TPM1_CH0
+	offRGB();
 	
 	switch(rx_data){
 	case STOP: // Stationary
-		TPM2_C1V = TPM2_C0V = TPM1_C1V = TPM1_C0V = 0x0;
+		motor_right_stop();
+		motor_left_stop();
+	
 		is_moving = false;
 		break;
 	case FORWARD: // Move forward in straight line
+		ledControl(green_led, led_on);
 		motor_left_forward();
 		motor_right_forward();	
 	
@@ -375,83 +393,54 @@ void run_motor() {
 		break;
 
 	case FRONT_LEFT: // Turn left	// NOT WORKING
-		// Configure left wheels
-		TPM2_C0V = 0x0;
-		TPM2_C1V = 0x0;
-
-		// Configure right wheels
-		TPM1_C0V = 0x0;
-		TPM1_C1V = FULL_MOD;
-		test_var = TPM1_C1V;
+		ledControl(red_led, led_on);
+		motor_left_stop(); // for now
+		motor_right_forward();
 	
 		is_moving = true;
 		break;
 	
 	case FRONT_RIGHT: // Turn right // NOT WORKING
-		// Configure left wheels
-		TPM2_C0V = 0x0;
-		TPM2_C1V = FULL_MOD;
-
-		// Configure right wheels
-		TPM1_C0V = 0x0;
-		TPM1_C1V = 0x0;	
+		ledControl(blue_led, led_on);
+		motor_left_forward();
+		motor_right_stop(); // for now
 	
 		is_moving = true;
 		break;
 
-		
 	case BACKWARD: // Reverse in straight line
-		// Configure left wheels
-		TPM2_C1V = 0x0;
-		TPM2_C0V = HALF_MOD;
-		// Configure right wheels
-		TPM1_C1V = 0x0;
-		TPM1_C0V = HALF_MOD;
+		ledControl(green_led, led_on);
+		motor_left_reverse();
+		motor_right_reverse();
 	
 		is_moving = true;
 		break; 
 	
 	case LEFT: // pivot L
-		// left wheels reverse
-		TPM2_C1V = 0x0;
-		TPM2_C0V = HALF_MOD;
-		// right wheels forward
-		TPM1_C0V = 0x0;
-		TPM1_C1V = HALF_MOD;
+		motor_left_reverse();
+		motor_right_forward();
 	
 		is_moving = true;
 		break;
 	
 	case RIGHT: // pivot R
-		// left wheels forward
-		TPM2_C0V = 0x0;
-		TPM2_C1V = HALF_MOD;
-		// right wheels reverse
-		TPM1_C1V = 0x0;
-		TPM1_C0V = HALF_MOD;
-	
+		motor_left_forward();
+		motor_right_reverse();
+
 		is_moving = true;
 		break;
 	
-	case REVERSE_LEFT: // Reverse in straight line
-	// Configure left wheels
-	TPM2_C1V = 0x0;
-	TPM2_C0V = HALF_MOD;
-	// Configure right wheels
-	TPM1_C1V = 0x0;
-	TPM1_C0V = FULL_MOD;
-
-	is_moving = true;
+	case REVERSE_LEFT: // Reverse in straight line // NOT WORKING
+		motor_left_stop(); // for now
+		motor_right_reverse();
+		
+		is_moving = true;
 	break; 
 	
-	case REVERSE_RIGHT: // Reverse in straight line
-	// Configure left wheels
-	TPM2_C1V = 0x0;
-	TPM2_C0V = FULL_MOD;
-	// Configure right wheels
-	TPM1_C1V = 0x0;
-	TPM1_C0V = HALF_MOD;
-
+	case REVERSE_RIGHT: // Reverse in straight line	// NOT WORKING
+		motor_left_reverse();
+		motor_right_stop(); // for now
+	
 	is_moving = true;
 	break; 
 		
@@ -623,7 +612,7 @@ void brain_thread (void *argument) {
 void motor_thread (void *argument) {
 	for (;;) {
 		osSemaphoreAcquire(motorSem, osWaitForever);
-		ledControl(blue_led, led_on);
+		// ledControl(blue_led, led_on);
 
 		// TODO: remove push btn interrupt
 		
