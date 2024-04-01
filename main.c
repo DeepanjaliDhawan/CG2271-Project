@@ -361,9 +361,9 @@ void run_motor() {
 		break;
 
 	case FRONT_LEFT: // Turn left
-		// Configure left wheels
-		TPM2_C0V = 0;
-		TPM2_C1V = HALF_MOD;
+		// Configure left wheels	// left B, right F
+		TPM2_C0V = QUARTER_MOD;
+		TPM2_C1V = 0; 	
 
 		// Configure right wheels
 		TPM1_C0V = 0;
@@ -372,17 +372,17 @@ void run_motor() {
 		is_moving = true;
 		break;
 	
-	case FRONT_RIGHT: // Turn right
+	case FRONT_RIGHT: // Turn right // left F, right B
 		// Configure left wheels
-		TPM2_C0V = 0;
-		TPM2_C1V = FULL_MOD;
+		TPM2_C0V = FULL_MOD;	// testing, to change back tombalik
+		TPM2_C1V = 0;
 		
 		// Configure right wheels
 		TPM1_C0V = 0;
-		TPM1_C1V = HALF_MOD;
+		TPM1_C1V = QUARTER_MOD;
 	
 		is_moving = true;
-		break;
+		break;	
 	
 	case BACKWARD: // Reverse in straight line
 		// Configure left wheels
@@ -415,6 +415,8 @@ void run_motor() {
 		TPM1_C0V = HALF_MOD;
 	
 		is_moving = true;
+		break;
+	
 	default:
 		break;
 	}
@@ -536,6 +538,8 @@ void play_ending_song() {
 		delay(0x1F000);
 		//osDelay(100);
 	}
+	while (1) {
+	}
 }
 
 
@@ -563,7 +567,6 @@ void brain_thread (void *argument) {
 	for (;;) {
 		osSemaphoreAcquire(brainSem, osWaitForever);
 		ledControl(red_led, led_on);
-		delay(0x80000);
 		
 		if (FUNCTIONBITSMASK(rx_data) == 0x00) {
 			osSemaphoreRelease(motorSem);
@@ -581,7 +584,6 @@ void motor_thread (void *argument) {
 	for (;;) {
 		osSemaphoreAcquire(motorSem, osWaitForever);
 		ledControl(blue_led, led_on);
-		delay(0x80000);
 		// TODO: remove push btn interrupt
 		
 		// include motor move code/function
@@ -650,8 +652,7 @@ void finish_music_thread (void *argument) {
 
 
 /* MAIN function */
-int main(void)
-{
+int main(void){
 	SystemCoreClockUpdate();
 	//InitPWM();
 	//InitSwitch();
