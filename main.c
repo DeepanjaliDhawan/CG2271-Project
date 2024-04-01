@@ -19,16 +19,16 @@
 #define UART_RX_PORTE23 23
 #define UART2_INT_PRIO 128
 // motors
-#define MOTOR_BACK_LEFT		0	// PTB0 TPM1_CH0
-#define MOTOR_BACK_RIGHT 	1	// PTB1 TPM1_CH1
-#define MOTOR_FRONT_LEFT	2	// PTB2 TPM2_CH0
-#define MOTOR_FRONT_RIGHT 	3	// PTB3 TPM2_CH1
+#define MOTOR_BACK_LEFT		0	// PTB0 TPM1_CH0 RIGHT
+#define MOTOR_BACK_RIGHT 	1	// PTB1 TPM1_CH1 RIGHT
+#define MOTOR_FRONT_LEFT	2	// PTB2 TPM2_CH0 LEFT
+#define MOTOR_FRONT_RIGHT 	3	// PTB3 TPM2_CH1 LEFT
 
-#define DIRECTIONS 6
-#define MOD_VAL 7500
-#define FULL_MOD (MOD_VAL)			// 7500	// for actual run
-#define HALF_MOD (MOD_VAL / 2)			// 3750	// for adjustment
-#define QUARTER_MOD (MOD_VAL / 4)		// 1875 // for test runs
+#define DIRECTIONS 		6
+#define MOD_VAL 		7500
+#define FULL_MOD 		0x1D4C			// 7500	// for actual run
+#define HALF_MOD 		0xEA6			// 3750	// for adjustment
+#define QUARTER_MOD 	1875		// 1875 // for test runs
 #define TEST_MOD (MOD_VAL / 8)			// 937	// for test runs// temp
 
 #define SW_POS		6		// PORTD Pin 6: for temporary push btn Interrupt
@@ -89,6 +89,8 @@ osSemaphoreId_t finishMusicSem;	// Semaphore for the music played when finish th
 volatile uint8_t rx_data = 0x00;
 
 volatile bool is_moving = false;
+
+volatile uint32_t test_var = 0x00000000;  // for TESTING DELETE AFTERWARDS
 
 
 typedef enum
@@ -335,88 +337,112 @@ void InitPWM(void){
 	TPM1->MOD = MOD_VAL;
 	TPM2->MOD = MOD_VAL;
 }
+// NOT USED YET (replace the // for now)
+void motor_left_reverse_half() { // copy paste for FRONT_LEFT/RIGHT, REVERSE_LEFT/RIGHT if working
+	TPM2_C1V = 0x0;
+	TPM2_C0V = QUARTER_MOD;
+}
+// IN USE (TDLR: TPM2 for left, TPM1 for right)
+void motor_left_forward() {
+	TPM2_C0V = 0x0;
+	TPM2_C1V = FULL_MOD;
+}
+void motor_left_stop() {
+	TPM2_C0V = 0x0;
+	TPM2_C1V = 0x0;
+}
+void motor_left_reverse() {
+	TPM2_C1V = 0x0;
+	TPM2_C0V = HALF_MOD;
+}
+void motor_right_forward() {
+	TPM1_C0V = 0x0;
+	TPM1_C1V = FULL_MOD;
+}
+void motor_right_stop() {
+	TPM1_C0V = 0x0;
+	TPM1_C1V = 0x0;
+}
+void motor_right_reverse() {
+	TPM1_C1V = 0x0;
+	TPM1_C0V = HALF_MOD;
+}
 
 void run_motor() {
 	// For reference:
 	// Left wheels, AIN1: PTB3, TPM2_CH1
 	// Left wheels, AIN2: PTB2, TPM2_CH0
 	// Right wheels, AIN1: PTB1, TPM1_CH1
-	// Right wheels, AIN2: PTB, TPM1_CH0
-
+	// Right wheels, AIN2: PTB0, TPM1_CH0
+	offRGB(); 		// for TESTING DELETE AFTERWARDS
+	
 	switch(rx_data){
 	case STOP: // Stationary
-		TPM2_C1V = TPM2_C0V = TPM1_C1V = TPM1_C0V = 0x0;
+		motor_right_stop();
+		motor_left_stop();
+	
 		is_moving = false;
 		break;
 	case FORWARD: // Move forward in straight line
-		// Configure left wheels
-		TPM2_C0V = 0;
-		TPM2_C1V = FULL_MOD;
-
-		// Configure right wheels
-		TPM1_C0V = 0;
-		TPM1_C1V = FULL_MOD;	
+		ledControl(green_led, led_on); // for TESTING DELETE AFTERWARDS
+		motor_left_forward();
+		motor_right_forward();	
 	
 		is_moving = true;
 		break;
 
-	case FRONT_LEFT: // Turn left
-		// Configure left wheels	// left B, right F
-		TPM2_C0V = QUARTER_MOD;
-		TPM2_C1V = 0; 	
-
-		// Configure right wheels
-		TPM1_C0V = 0;
-		TPM1_C1V = FULL_MOD;
+	case FRONT_LEFT: // Turn left	// NOT WORKING
+		ledControl(red_led, led_on); // for TESTING DELETE AFTERWARDS
+		motor_left_stop(); // for now
+		motor_right_forward();
 	
 		is_moving = true;
 		break;
 	
-	case FRONT_RIGHT: // Turn right // left F, right B
-		// Configure left wheels
-		TPM2_C0V = FULL_MOD;	// testing, to change back tombalik
-		TPM2_C1V = 0;
-		
-		// Configure right wheels
-		TPM1_C0V = 0;
-		TPM1_C1V = QUARTER_MOD;
+	case FRONT_RIGHT: // Turn right // NOT WORKING
+		ledControl(blue_led, led_on); // for TESTING DELETE AFTERWARDS
+		motor_left_forward();
+		motor_right_stop(); // for now
 	
 		is_moving = true;
-		break;	
-	
+		break;
+
 	case BACKWARD: // Reverse in straight line
-		// Configure left wheels
-		TPM2_C1V = 0;
-		TPM2_C0V = HALF_MOD;
-		// Configure right wheels
-		TPM1_C1V = 0;
-		TPM1_C0V = HALF_MOD;
+		ledControl(green_led, led_on); // for TESTING DELETE AFTERWARDS
+		motor_left_reverse();
+		motor_right_reverse();
 	
 		is_moving = true;
 		break; 
 	
 	case LEFT: // pivot L
-		// left wheels reverse
-		TPM2_C1V = 0;
-		TPM2_C0V = HALF_MOD;
-		// right wheels forward
-		TPM1_C0V = 0;
-		TPM1_C1V = HALF_MOD;
+		motor_left_reverse();
+		motor_right_forward();
 	
 		is_moving = true;
 		break;
 	
 	case RIGHT: // pivot R
-		// left wheels forward
-		TPM2_C0V = 0;
-		TPM2_C1V = HALF_MOD;
-		// right wheels reverse
-		TPM1_C1V = 0;
-		TPM1_C0V = HALF_MOD;
-	
+		motor_left_forward();
+		motor_right_reverse();
+
 		is_moving = true;
 		break;
 	
+	case REVERSE_LEFT: // Reverse in straight line // NOT WORKING
+		motor_left_stop(); // for now
+		motor_right_reverse();
+		
+		is_moving = true;
+	break; 
+	
+	case REVERSE_RIGHT: // Reverse in straight line	// NOT WORKING
+		motor_left_reverse();
+		motor_right_stop(); // for now
+	
+	is_moving = true;
+	break; 
+		
 	default:
 		break;
 	}
@@ -585,7 +611,7 @@ void brain_thread (void *argument) {
 void motor_thread (void *argument) {
 	for (;;) {
 		osSemaphoreAcquire(motorSem, osWaitForever);
-		ledControl(blue_led, led_on);
+		// ledControl(blue_led, led_on);
 
 		// TODO: remove push btn interrupt
 		
