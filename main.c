@@ -536,6 +536,8 @@ void play_ending_song() {
 		delay(0x1F000);
 		//osDelay(100);
 	}
+	while(1) {
+	}
 }
 
 
@@ -563,7 +565,7 @@ void brain_thread (void *argument) {
 	for (;;) {
 		osSemaphoreAcquire(brainSem, osWaitForever);
 		ledControl(red_led, led_on);
-		delay(0x80000);
+		// delay(0x80000);
 		
 		if (FUNCTIONBITSMASK(rx_data) == 0x00) {
 			osSemaphoreRelease(motorSem);
@@ -581,7 +583,7 @@ void motor_thread (void *argument) {
 	for (;;) {
 		osSemaphoreAcquire(motorSem, osWaitForever);
 		ledControl(blue_led, led_on);
-		delay(0x80000);
+		// delay(0x80000);
 		// TODO: remove push btn interrupt
 		
 		// include motor move code/function
