@@ -19,16 +19,16 @@
 #define UART_RX_PORTE23 23
 #define UART2_INT_PRIO 128
 // motors
-#define MOTOR_BACK_LEFT		0	// PTB0 TPM1_CH0
-#define MOTOR_BACK_RIGHT 	1	// PTB1 TPM1_CH1
-#define MOTOR_FRONT_LEFT	2	// PTB2 TPM2_CH0
-#define MOTOR_FRONT_RIGHT 	3	// PTB3 TPM2_CH1
+#define MOTOR_BACK_LEFT		0	// PTB0 TPM1_CH0 RIGHT
+#define MOTOR_BACK_RIGHT 	1	// PTB1 TPM1_CH1 RIGHT
+#define MOTOR_FRONT_LEFT	2	// PTB2 TPM2_CH0 LEFT
+#define MOTOR_FRONT_RIGHT 	3	// PTB3 TPM2_CH1 LEFT
 
-#define DIRECTIONS 6
-#define MOD_VAL 7500
-#define FULL_MOD (MOD_VAL)			// 7500	// for actual run
-#define HALF_MOD (MOD_VAL / 2)			// 3750	// for adjustment
-#define QUARTER_MOD (MOD_VAL / 4)		// 1875 // for test runs
+#define DIRECTIONS 		6
+#define MOD_VAL 		7500
+#define FULL_MOD 		0x1D4C			// 7500	// for actual run
+#define HALF_MOD 		0xEA6			// 3750	// for adjustment
+#define QUARTER_MOD 	1875		// 1875 // for test runs
 #define TEST_MOD (MOD_VAL / 8)			// 937	// for test runs// temp
 
 #define SW_POS		6		// PORTD Pin 6: for temporary push btn Interrupt
@@ -89,6 +89,8 @@ osSemaphoreId_t finishMusicSem;	// Semaphore for the music played when finish th
 volatile uint8_t rx_data = 0x00;
 
 volatile bool is_moving = false;
+
+volatile uint32_t test_var = 0x00000000;
 
 
 typedef enum
@@ -336,60 +338,74 @@ void InitPWM(void){
 	TPM2->MOD = MOD_VAL;
 }
 
+void motor_left_forward() {
+	TPM2_C0V = 0x0;
+	TPM2_C1V = FULL_MOD;
+}
+void motor_left_stop() {
+	TPM2_C0V = 0x0;
+	TPM2_C1V = 0x0;
+}
+void motor_right_forward() {
+	TPM1_C0V = 0x0;
+	TPM1_C1V = FULL_MOD;
+}
+void motor_right_stop() {
+	TPM1_C0V = 0x0;
+	TPM1_C1V = 0x0;
+}
+
 void run_motor() {
 	// For reference:
 	// Left wheels, AIN1: PTB3, TPM2_CH1
 	// Left wheels, AIN2: PTB2, TPM2_CH0
 	// Right wheels, AIN1: PTB1, TPM1_CH1
-	// Right wheels, AIN2: PTB, TPM1_CH0
-
+	// Right wheels, AIN2: PTB0, TPM1_CH0
+	
 	switch(rx_data){
 	case STOP: // Stationary
 		TPM2_C1V = TPM2_C0V = TPM1_C1V = TPM1_C0V = 0x0;
 		is_moving = false;
 		break;
 	case FORWARD: // Move forward in straight line
+		motor_left_forward();
+		motor_right_forward();	
+	
+		is_moving = true;
+		break;
+
+	case FRONT_LEFT: // Turn left	// NOT WORKING
 		// Configure left wheels
-		TPM2_C0V = 0;
+		TPM2_C0V = 0x0;
+		TPM2_C1V = 0x0;
+
+		// Configure right wheels
+		TPM1_C0V = 0x0;
+		TPM1_C1V = FULL_MOD;
+		test_var = TPM1_C1V;
+	
+		is_moving = true;
+		break;
+	
+	case FRONT_RIGHT: // Turn right // NOT WORKING
+		// Configure left wheels
+		TPM2_C0V = 0x0;
 		TPM2_C1V = FULL_MOD;
 
 		// Configure right wheels
-		TPM1_C0V = 0;
-		TPM1_C1V = FULL_MOD;	
+		TPM1_C0V = 0x0;
+		TPM1_C1V = 0x0;	
 	
 		is_moving = true;
 		break;
 
-	case FRONT_LEFT: // Turn left
-		// Configure left wheels	// left B, right F
-		TPM2_C0V = QUARTER_MOD;
-		TPM2_C1V = 0; 	
-
-		// Configure right wheels
-		TPM1_C0V = 0;
-		TPM1_C1V = FULL_MOD;
-	
-		is_moving = true;
-		break;
-	
-	case FRONT_RIGHT: // Turn right // left F, right B
-		// Configure left wheels
-		TPM2_C0V = FULL_MOD;	// testing, to change back tombalik
-		TPM2_C1V = 0;
 		
-		// Configure right wheels
-		TPM1_C0V = 0;
-		TPM1_C1V = QUARTER_MOD;
-	
-		is_moving = true;
-		break;	
-	
 	case BACKWARD: // Reverse in straight line
 		// Configure left wheels
-		TPM2_C1V = 0;
+		TPM2_C1V = 0x0;
 		TPM2_C0V = HALF_MOD;
 		// Configure right wheels
-		TPM1_C1V = 0;
+		TPM1_C1V = 0x0;
 		TPM1_C0V = HALF_MOD;
 	
 		is_moving = true;
@@ -397,10 +413,10 @@ void run_motor() {
 	
 	case LEFT: // pivot L
 		// left wheels reverse
-		TPM2_C1V = 0;
+		TPM2_C1V = 0x0;
 		TPM2_C0V = HALF_MOD;
 		// right wheels forward
-		TPM1_C0V = 0;
+		TPM1_C0V = 0x0;
 		TPM1_C1V = HALF_MOD;
 	
 		is_moving = true;
@@ -408,15 +424,37 @@ void run_motor() {
 	
 	case RIGHT: // pivot R
 		// left wheels forward
-		TPM2_C0V = 0;
+		TPM2_C0V = 0x0;
 		TPM2_C1V = HALF_MOD;
 		// right wheels reverse
-		TPM1_C1V = 0;
+		TPM1_C1V = 0x0;
 		TPM1_C0V = HALF_MOD;
 	
 		is_moving = true;
 		break;
 	
+	case REVERSE_LEFT: // Reverse in straight line
+	// Configure left wheels
+	TPM2_C1V = 0x0;
+	TPM2_C0V = HALF_MOD;
+	// Configure right wheels
+	TPM1_C1V = 0x0;
+	TPM1_C0V = FULL_MOD;
+
+	is_moving = true;
+	break; 
+	
+	case REVERSE_RIGHT: // Reverse in straight line
+	// Configure left wheels
+	TPM2_C1V = 0x0;
+	TPM2_C0V = FULL_MOD;
+	// Configure right wheels
+	TPM1_C1V = 0x0;
+	TPM1_C0V = HALF_MOD;
+
+	is_moving = true;
+	break; 
+		
 	default:
 		break;
 	}
