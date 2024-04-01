@@ -538,7 +538,9 @@ void play_ending_song() {
 		delay(0x1F000);
 		//osDelay(100);
 	}
-	while (1) {
+
+
+	while(1) {
 	}
 }
 
@@ -584,6 +586,7 @@ void motor_thread (void *argument) {
 	for (;;) {
 		osSemaphoreAcquire(motorSem, osWaitForever);
 		ledControl(blue_led, led_on);
+
 		// TODO: remove push btn interrupt
 		
 		// include motor move code/function
