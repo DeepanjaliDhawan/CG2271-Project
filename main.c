@@ -53,20 +53,20 @@
 #define PTD0 0 // for PWM (TPM0_CH0)
 
 #define CLOCK (48000000 / 128) // 375000
-#define note_C 		2100
-#define note_D 		2300
-#define note_E 		2500
-#define note_F 		2600
-#define note_G 		2800
-#define note_A 		3000
-#define note_B 		3100
-#define note_C1 	3200
-#define note_D1 	3400
-#define note_E1 	3600
-#define note_F1 	3700
-#define note_G1 	3900
-#define note_A1 	4100
-#define note_B1 	4300
+#define note_C 		1047
+#define note_D 		1175
+#define note_E 		1319
+#define note_F 		1397
+#define note_G 		1568
+#define note_A 		1760
+#define note_B 		1865
+#define note_C1 	2093
+#define note_D1 	2349
+#define note_E1 	2637
+#define note_F1 	2794
+#define note_G1 	3136
+#define note_A1 	3520
+#define note_B1 	3729
 
 // ESP commands
 #define STOP 			0x00
