@@ -90,7 +90,7 @@ volatile uint8_t rx_data = 0x00;
 
 volatile bool is_moving = false;
 
-volatile uint32_t test_var = 0x00000000;
+volatile uint32_t test_var = 0x00000000;  // for TESTING DELETE AFTERWARDS
 
 
 typedef enum
@@ -364,7 +364,6 @@ void motor_right_stop() {
 	TPM1_C1V = 0x0;
 }
 void motor_right_reverse() {
-	// Configure right wheels
 	TPM1_C1V = 0x0;
 	TPM1_C0V = HALF_MOD;
 }
@@ -375,7 +374,7 @@ void run_motor() {
 	// Left wheels, AIN2: PTB2, TPM2_CH0
 	// Right wheels, AIN1: PTB1, TPM1_CH1
 	// Right wheels, AIN2: PTB0, TPM1_CH0
-	offRGB();
+	offRGB(); 		// for TESTING DELETE AFTERWARDS
 	
 	switch(rx_data){
 	case STOP: // Stationary
@@ -385,7 +384,7 @@ void run_motor() {
 		is_moving = false;
 		break;
 	case FORWARD: // Move forward in straight line
-		ledControl(green_led, led_on);
+		ledControl(green_led, led_on); // for TESTING DELETE AFTERWARDS
 		motor_left_forward();
 		motor_right_forward();	
 	
@@ -393,7 +392,7 @@ void run_motor() {
 		break;
 
 	case FRONT_LEFT: // Turn left	// NOT WORKING
-		ledControl(red_led, led_on);
+		ledControl(red_led, led_on); // for TESTING DELETE AFTERWARDS
 		motor_left_stop(); // for now
 		motor_right_forward();
 	
@@ -401,7 +400,7 @@ void run_motor() {
 		break;
 	
 	case FRONT_RIGHT: // Turn right // NOT WORKING
-		ledControl(blue_led, led_on);
+		ledControl(blue_led, led_on); // for TESTING DELETE AFTERWARDS
 		motor_left_forward();
 		motor_right_stop(); // for now
 	
@@ -409,7 +408,7 @@ void run_motor() {
 		break;
 
 	case BACKWARD: // Reverse in straight line
-		ledControl(green_led, led_on);
+		ledControl(green_led, led_on); // for TESTING DELETE AFTERWARDS
 		motor_left_reverse();
 		motor_right_reverse();
 	
