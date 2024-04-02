@@ -92,6 +92,8 @@ volatile bool is_moving = false;
 
 volatile uint32_t test_var = 0x00000000;  // for TESTING DELETE AFTERWARDS
 
+volatile int case_monitor = 0;  // for TESTING DELETE AFTERWARDS
+
 
 typedef enum
 {
@@ -130,8 +132,7 @@ static void delay(volatile uint32_t nof) {
 
 
 /* input/output for LED @ PORTB, PORTD */
-/*
-void initGPIO(void)
+void InitGPIO_onboard(void)
 {
     // Enable Clock to PORTB and PORTD
     SIM->SCGC5 |= ((SIM_SCGC5_PORTB_MASK) | (SIM_SCGC5_PORTD_MASK));
@@ -148,7 +149,7 @@ void initGPIO(void)
     PTB->PDDR |= (MASK(RED_LED) | MASK(GREEN_LED));
     PTD->PDDR |= MASK(BLUE_LED);
 }
-*/
+
 
 void InitGPIO(void) {
 	// Enable Clock to PORTC
@@ -374,43 +375,49 @@ void run_motor() {
 	// Left wheels, AIN2: PTB2, TPM2_CH0
 	// Right wheels, AIN1: PTB1, TPM1_CH1
 	// Right wheels, AIN2: PTB0, TPM1_CH0
-	offRGB(); 		// for TESTING DELETE AFTERWARDS
+	//offRGB(); 		// for TESTING DELETE AFTERWARDS
 	
 	switch(rx_data){
 	case STOP: // Stationary
 		motor_right_stop();
 		motor_left_stop();
+		//offRGB();  // for testing remove after
+		case_monitor = 0;
 	
 		is_moving = false;
 		break;
 	case FORWARD: // Move forward in straight line
-		ledControl(green_led, led_on); // for TESTING DELETE AFTERWARDS
+		//ledControl(green_led, led_on); // for TESTING DELETE AFTERWARDS
 		motor_left_forward();
 		motor_right_forward();	
+		case_monitor = 1;
 	
 		is_moving = true;
 		break;
 
 	case FRONT_LEFT: // Turn left	// NOT WORKING
-		ledControl(red_led, led_on); // for TESTING DELETE AFTERWARDS
+		//ledControl(red_led, led_on); // for TESTING DELETE AFTERWARDS
 		motor_left_stop(); // for now
 		motor_right_forward();
+		case_monitor = 5;
 	
 		is_moving = true;
 		break;
 	
 	case FRONT_RIGHT: // Turn right // NOT WORKING
-		ledControl(blue_led, led_on); // for TESTING DELETE AFTERWARDS
+		//ledControl(blue_led, led_on); // for TESTING DELETE AFTERWARDS
 		motor_left_forward();
 		motor_right_stop(); // for now
+		case_monitor = 6;
 	
 		is_moving = true;
 		break;
 
 	case BACKWARD: // Reverse in straight line
-		ledControl(green_led, led_on); // for TESTING DELETE AFTERWARDS
+		//ledControl(green_led, led_on); // for TESTING DELETE AFTERWARDS
 		motor_left_reverse();
 		motor_right_reverse();
+		case_monitor = 2;
 	
 		is_moving = true;
 		break; 
@@ -418,6 +425,7 @@ void run_motor() {
 	case LEFT: // pivot L
 		motor_left_reverse();
 		motor_right_forward();
+		case_monitor = 3;
 	
 		is_moving = true;
 		break;
@@ -425,6 +433,7 @@ void run_motor() {
 	case RIGHT: // pivot R
 		motor_left_forward();
 		motor_right_reverse();
+		case_monitor = 4;
 
 		is_moving = true;
 		break;
@@ -432,6 +441,7 @@ void run_motor() {
 	case REVERSE_LEFT: // Reverse in straight line // NOT WORKING
 		motor_left_stop(); // for now
 		motor_right_reverse();
+		case_monitor = 7;
 		
 		is_moving = true;
 	break; 
@@ -439,6 +449,7 @@ void run_motor() {
 	case REVERSE_RIGHT: // Reverse in straight line	// NOT WORKING
 		motor_left_reverse();
 		motor_right_stop(); // for now
+		case_monitor = 8;
 	
 	is_moving = true;
 	break; 
@@ -594,7 +605,7 @@ void UART2_IRQHandler()
 void brain_thread (void *argument) {
 	for (;;) {
 		osSemaphoreAcquire(brainSem, osWaitForever);
-		ledControl(red_led, led_on);
+		//ledControl(red_led, led_on);
 		
 		if (FUNCTIONBITSMASK(rx_data) == 0x00) {
 			osSemaphoreRelease(motorSem);
@@ -685,6 +696,7 @@ int main(void){
 	SystemCoreClockUpdate();
 	//InitPWM();
 	//InitSwitch();
+	//InitGPIO_onboard();
 	InitGPIO();
 	initUART2(BAUD_RATE);
 	InitPWM();
